@@ -22,7 +22,7 @@ input_rect = pygame.Rect(200, 200, 140, 32)
   
 # color_active stores color(lightskyblue3) which
 # gets active when input box is clicked by user
-color_active = pygame.Color('red')
+color_active = pygame.Color('green')
   
 # color_passive store color(chartreuse4) which is
 # color of input box.
