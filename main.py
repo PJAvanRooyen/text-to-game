@@ -1,5 +1,4 @@
 
-# import sys module
 import pygame
 import sys
 import asyncio
@@ -22,7 +21,7 @@ input_rect = pygame.Rect(200, 200, 140, 32)
   
 # color_active stores color(lightskyblue3) which
 # gets active when input box is clicked by user
-color_active = pygame.Color('green')
+color_active = pygame.Color('lightskyblue3')
   
 # color_passive store color(chartreuse4) which is
 # color of input box.
