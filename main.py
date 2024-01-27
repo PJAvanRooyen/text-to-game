@@ -25,7 +25,7 @@ color_active = pygame.Color('lightskyblue3')
   
 # color_passive store color(chartreuse4) which is
 # color of input box.
-color_passive = pygame.Color('yellow')
+color_passive = pygame.Color('red')
 color = color_passive
   
 
