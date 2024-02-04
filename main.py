@@ -1,81 +1,50 @@
-import pygame
-import sys
-import asyncio
+import pygame 
 
+# define the window size 
+window_width = 800
+window_height = 600
+
+# initialize pygame 
 pygame.init()
-clock = pygame.time.Clock()
-screen = pygame.display.set_mode([600, 500])
-base_font = pygame.font.Font(None, 32)
+pygame.mixer.init()
 
-# Function to initialize the grid with random values
-def init_grid(rows, cols):
-    grid = []
-    for row in range(rows):
-        grid.append([])
-        for col in range(cols):
-            grid[row].append(0)
-    return grid
+# create a surface and define the window 
+screen = pygame.display.set_mode((window_width, window_height))
+pygame.display.set_caption("Conway's Game of Life")
 
-# Function to draw the grid lines
-def draw_grid(grid, rows, cols):
-    for row in range(rows):
-        for col in range(cols):
-            color = (255, 255, 255)
-            if grid[row][col] == 1:
-                color = (0, 0, 0)
-            pygame.draw.rect(screen, color, (col * 10, row * 10, 10, 10), 0)
+# create a font 
+font = pygame.font.Font('freesansbold.ttf', 24)
 
-# Function to count live neighbors
-def count_neighbors(grid, x, y, rows, cols):
-    count = 0
-    for i in range(-1, 2):
-        for j in range(-1, 2):
-            row = (x + i + rows) % rows
-            col = (y + j + cols) % cols
-            count += grid[row][col]
-    count -= grid[x][y]
-    return count
+# create a color 
+black = (0, 0, 0)
+white = (255, 255, 255)
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
 
-async def main():
-    rows = 50
-    cols = 60
-    grid = init_grid(rows, cols)
-
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = pygame.mouse.get_pos()
-                grid[y // 10][x // 10] = 1
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    running = False
-
-        next_grid = init_grid(rows, cols)
-
-        for i in range(rows):
-            for j in range(cols):
-                neighbors = count_neighbors(grid, i, j, rows, cols)
-                if grid[i][j] == 1:
-                    if neighbors < 2 or neighbors > 3:
-                        next_grid[i][j] = 0
-                    else:
-                        next_grid[i][j] = 1
-                else:
-                    if neighbors == 3:
-                        next_grid[i][j] = 1
-
-        grid = next_grid
-        screen.fill((0, 0, 0))
-        draw_grid(grid, rows, cols)
-        pygame.display.flip()
-        clock.tick(10)
-        await asyncio.sleep(0)
-
-asyncio.run(main())
-
+# create the game loop 
+while True:
+    # get the events 
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
+    
+    # create the surface 
+    surface = pygame.Surface((window_width, window_height))
+    surface.fill(black)
+    
+    # draw the grid 
+    pygame.draw.line(surface, white, [0, 0], [window_width, window_height], 5)
+    pygame.draw.line(surface, white, [0, 0], [0, window_height], 5)
+    pygame.draw.line(surface, white, [window_width, 0], [window_width, window_height], 5)
+    pygame.draw.line(surface, white, [window_width, window_height], [0, 0], 5)
+    
+    # create a surface to display the text 
+    text_surface = font.render('Conway\'s Game of Life', False, white)
+    text_rect = text_surface.get_rect()
+    text_rect.center = (window_width // 2, window_height // 2)
+    surface.blit(text_surface, text_rect)
+    
+    # display the surface 
+    pygame.display.flip()
