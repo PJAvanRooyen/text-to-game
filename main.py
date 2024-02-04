@@ -1,97 +1,81 @@
-
 import pygame
 import sys
 import asyncio
-  
-  
-# pygame.init() will initialize all
-# imported module
-pygame.init()
-  
-clock = pygame.time.Clock()
-  
-# it will display on screen
-screen = pygame.display.set_mode([600, 500])
-  
-# basic font for user typed
-base_font = pygame.font.Font(None, 32)
-  
-# create rectangle
-input_rect = pygame.Rect(200, 200, 140, 32)
-  
-# color_active stores color(lightskyblue3) which
-# gets active when input box is clicked by user
-color_active = pygame.Color('lightskyblue3')
-  
-# color_passive store color(chartreuse4) which is
-# color of input box.
-color_passive = pygame.Color('chartreuse4')
-color = color_passive
-  
 
+pygame.init()
+clock = pygame.time.Clock()
+screen = pygame.display.set_mode([600, 500])
+base_font = pygame.font.Font(None, 32)
+
+# Function to initialize the grid with random values
+def init_grid(rows, cols):
+    grid = []
+    for row in range(rows):
+        grid.append([])
+        for col in range(cols):
+            grid[row].append(0)
+    return grid
+
+# Function to draw the grid lines
+def draw_grid(grid, rows, cols):
+    for row in range(rows):
+        for col in range(cols):
+            color = (255, 255, 255)
+            if grid[row][col] == 1:
+                color = (0, 0, 0)
+            pygame.draw.rect(screen, color, (col * 10, row * 10, 10, 10), 0)
+
+# Function to count live neighbors
+def count_neighbors(grid, x, y, rows, cols):
+    count = 0
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            row = (x + i + rows) % rows
+            col = (y + j + cols) % cols
+            count += grid[row][col]
+    count -= grid[x][y]
+    return count
 
 async def main():
-    user_text = ''
-    active = False
-    while True:
+    rows = 50
+    cols = 60
+    grid = init_grid(rows, cols)
+
+    running = True
+    while running:
         for event in pygame.event.get():
-      
-          # if user types QUIT then the screen will close
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-      
-            if event.type == pygame.MOUSEBUTTONDOWN:
 
-                if input_rect.collidepoint(event.pos):
-                    active = True
-                else:
-                    active = False
-      
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                grid[y // 10][x // 10] = 1
+
             if event.type == pygame.KEYDOWN:
-                print(event.key)
-                # Check for backspace
-                if event.key == pygame.K_BACKSPACE:
-      
-                    # get text input from 0 to -1 i.e. end.
-                    user_text = user_text[:-1]
-                elif event.key == 13 or event.key == 1073741912:
-                    if user_text == "ciao":
-                        user_text = "Ciao anche a te"
-      
-                # Unicode standard is used for string
-                # formation
+                if event.key == pygame.K_SPACE:
+                    running = False
+
+        next_grid = init_grid(rows, cols)
+
+        for i in range(rows):
+            for j in range(cols):
+                neighbors = count_neighbors(grid, i, j, rows, cols)
+                if grid[i][j] == 1:
+                    if neighbors < 2 or neighbors > 3:
+                        next_grid[i][j] = 0
+                    else:
+                        next_grid[i][j] = 1
                 else:
-                    user_text += event.unicode
-          
-        # it will set background color of screen
-        screen.fill((255, 255, 255))
-      
-        if active:
-            color = color_active
-        else:
-            color = color_passive
-              
-        # draw rectangle and argument passed which should
-        # be on screen
-        pygame.draw.rect(screen, color, input_rect)
-      
-        text_surface = base_font.render(user_text, True, (255, 255, 255))
-          
-        # render at position stated in arguments
-        screen.blit(text_surface, (input_rect.x+5, input_rect.y+5))
-          
-        # set width of textfield so that text cannot get
-        # outside of user's text input
-        input_rect.w = max(100, text_surface.get_width()+10)
-          
-        # display.flip() will update only a portion of the
-        # screen to updated, not full area
+                    if neighbors == 3:
+                        next_grid[i][j] = 1
+
+        grid = next_grid
+        screen.fill((0, 0, 0))
+        draw_grid(grid, rows, cols)
         pygame.display.flip()
-          
-        # clock.tick(60) means that for every second at most
-        # 60 frames should be passed.
-        clock.tick(60)
+        clock.tick(10)
         await asyncio.sleep(0)
 
 asyncio.run(main())
+
