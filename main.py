@@ -1,7 +1,4 @@
-
-# import sys module
 import pygame
-import sys
 import asyncio
 import random
   
@@ -76,79 +73,114 @@ def draw_grid(grid, player_x, player_y, goal_x, goal_y):
             pygame.draw.rect(screen, color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
 
+def update_player_pos(events, player_x, player_y):
+    had_interaction = False
+    up_pressed = False
+    down_pressed = False
+    right_pressed = False
+    left_pressed = False
+    for event in events:
+        if event.type == pygame.KEYDOWN:
+            had_interaction = True
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_UP]:
+                up_pressed = True
+            elif keys[pygame.K_DOWN]:
+                down_pressed = True
+            elif keys[pygame.K_LEFT]:
+                left_pressed = True
+            elif keys[pygame.K_RIGHT]:
+                right_pressed = True
+        elif event.type == pygame.MOUSEBUTTONDOWN:  # Touch control
+            had_interaction = True
+            pos = pygame.mouse.get_pos()
+            if (not (pos[0] == player_x and pos[1] == player_y)
+                    and pos[1] < GRID_HEIGHT):  # Prevent control if clicked in the UI area
+                if pos[0] < player_x * CELL_SIZE:
+                    left_pressed = True
+                elif pos[0] > (player_x + 1) * CELL_SIZE:
+                    right_pressed = True
+                if pos[1] < player_y * CELL_SIZE:
+                    down_pressed = True
+                elif pos[1] > (player_y + 1) * CELL_SIZE:
+                    up_pressed = True
+
+    if had_interaction:
+        if up_pressed:
+            player_y = max(0, player_y - 1)
+        elif down_pressed:
+            player_y = min(GRID_HEIGHT // CELL_SIZE - 1, player_y + 1)
+        if left_pressed:
+            player_x = max(0, player_x - 1)
+        elif right_pressed:
+            player_x = min(GRID_WIDTH // CELL_SIZE - 1, player_x + 1)
+    return had_interaction, player_x, player_y
+
+
 async def main():
-    lives = 10
-
-    # Create font object
-    font = pygame.font.SysFont(None, 36)
-
-    # Initialize game grid
-    grid = [[bool(random.randint(0, 1)) for _ in range(GRID_WIDTH // CELL_SIZE)] for _ in range(GRID_HEIGHT // CELL_SIZE)]
-
-    # Player cell position
-    player_x, player_y = GRID_WIDTH // CELL_SIZE // 2, GRID_HEIGHT // CELL_SIZE // 2
-    grid[player_y][player_x] = True
-
-    # Goal position
-    goal_x, goal_y = random.randint(0, GRID_WIDTH // CELL_SIZE - 1), random.randint(0, GRID_HEIGHT // CELL_SIZE - 1)
-
-    # Initial render
-    draw_initial_screen(font, grid, player_x, player_y, goal_x, goal_y)
-
     running = True
-    playing = True
     while running:
-        # Handle events
-        had_interaction = False
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                playing = False
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                had_interaction = True
-                if event.key == pygame.K_UP:
-                    player_y = max(0, player_y - 1)
-                elif event.key == pygame.K_DOWN:
-                    player_y = min(GRID_HEIGHT // CELL_SIZE - 1, player_y + 1)
-                elif event.key == pygame.K_LEFT:
-                    player_x = max(0, player_x - 1)
-                elif event.key == pygame.K_RIGHT:
-                    player_x = min(GRID_WIDTH // CELL_SIZE - 1, player_x + 1)
+        lives = 10
 
-        if had_interaction and playing:
-            # Copy grid for updates
-            new_grid = grid
+        # Create font object
+        font = pygame.font.SysFont(None, 36)
 
-            # Apply Conway's rules
-            for y in range(GRID_HEIGHT // CELL_SIZE):
-                for x in range(GRID_WIDTH // CELL_SIZE):
-                    new_grid[y][x] = apply_rule(grid, x, y)
+        # Initialize game grid
+        grid = [[bool(random.randint(0, 1)) for _ in range(GRID_WIDTH // CELL_SIZE)] for _ in range(GRID_HEIGHT // CELL_SIZE)]
 
-            if not apply_rule(new_grid, player_x, player_y):
-                lives -= 1
+        # Player cell position
+        player_x, player_y = GRID_WIDTH // CELL_SIZE // 2, GRID_HEIGHT // CELL_SIZE // 2
+        grid[player_y][player_x] = True
 
-            # Update grid and player position
-            grid = new_grid
-            grid[player_y][player_x] = True
+        # Goal position
+        goal_x, goal_y = random.randint(0, GRID_WIDTH // CELL_SIZE - 1), random.randint(0, GRID_HEIGHT // CELL_SIZE - 1)
 
-            draw_grid(grid, player_x, player_y, goal_x, goal_y)
+        # Initial render
+        draw_initial_screen(font, grid, player_x, player_y, goal_x, goal_y)
 
-            # Render lives text
-            score_text = font.render("Lives: " + str(lives), True, (0, 255, 255))
-            screen.blit(score_text, (UI_X_OFFSET, GRID_HEIGHT))
+        playing = True
+        while playing:
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    playing = False
+                    running = False
+            had_interaction, player_x, player_y = update_player_pos(events, player_x, player_y)
 
-            if player_x == goal_x and player_y == goal_y:
-                score_text = font.render("You Win!", True, (0, 255, 255))
-                screen.blit(score_text, (UI_X_OFFSET, GRID_HEIGHT + LIVES_HEIGHT))
-                playing = False
-            elif lives == 0:
-                score_text = font.render("Game Over", True, (0, 255, 255))
-                screen.blit(score_text, (UI_X_OFFSET, GRID_HEIGHT + LIVES_HEIGHT))
-                playing = False
+            if had_interaction and playing:
+                # Copy grid for updates
+                new_grid = grid
 
-            # Update display
-            pygame.display.flip()
-        await asyncio.sleep(0)
+                # Apply Conway's rules
+                for y in range(GRID_HEIGHT // CELL_SIZE):
+                    for x in range(GRID_WIDTH // CELL_SIZE):
+                        new_grid[y][x] = apply_rule(grid, x, y)
+
+                if not apply_rule(new_grid, player_x, player_y):
+                    lives -= 1
+
+                # Update grid and player position
+                grid = new_grid
+                grid[player_y][player_x] = True
+
+                draw_grid(grid, player_x, player_y, goal_x, goal_y)
+
+                # Render lives text
+                score_text = font.render("Lives: " + str(lives), True, (0, 255, 255))
+                screen.blit(score_text, (UI_X_OFFSET, GRID_HEIGHT))
+
+                if player_x == goal_x and player_y == goal_y:
+                    score_text = font.render("You Win!", True, (0, 255, 255))
+                    screen.blit(score_text, (UI_X_OFFSET, GRID_HEIGHT + LIVES_HEIGHT))
+                    playing = False
+                elif lives == 0:
+                    score_text = font.render("Game Over", True, (0, 255, 255))
+                    screen.blit(score_text, (UI_X_OFFSET, GRID_HEIGHT + LIVES_HEIGHT))
+                    playing = False
+
+                # Update display
+                pygame.display.flip()
+            await asyncio.sleep(0)
 
 asyncio.run(main())
-pygame.quit()
